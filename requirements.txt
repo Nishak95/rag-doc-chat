@@ -1,8 +1,9 @@
 streamlit
 langchain
 langchain-community
+langchain-openai
 langchain-text-splitters
-chromadb
+faiss-cpu
 openai
 pypdf
 python-dotenv
