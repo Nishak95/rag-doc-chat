@@ -2,7 +2,9 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from langchain.chains import RetrievalQA
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 from dotenv import load_dotenv
 import tempfile
 import os
@@ -37,11 +39,26 @@ def ask_question(retriever, question):
         temperature=0
     )
 
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        retriever=retriever,
-        return_source_documents=True
+    prompt = ChatPromptTemplate.from_template("""
+    Answer the question based only on the following context.
+    If you don't know the answer from the context, say "I don't have enough information in the document to answer this."
+
+    Context: {context}
+
+    Question: {question}
+    """)
+
+    def format_docs(docs):
+        return "\n\n".join(doc.page_content for doc in docs)
+
+    chain = (
+        {"context": retriever | format_docs, "question": RunnablePassthrough()}
+        | prompt
+        | llm
+        | StrOutputParser()
     )
 
-    result = qa_chain.invoke({"query": question})
-    return result["result"], result["source_documents"]
+    answer = chain.invoke(question)
+    source_docs = retriever.invoke(question)
+
+    return answer, source_docs
