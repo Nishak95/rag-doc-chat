@@ -119,6 +119,33 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
+# --- Password Protection ---
+def check_password():
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
+
+    if not st.session_state.authenticated:
+        st.markdown("""
+        <div style="max-width:400px; margin: 100px auto; text-align:center;">
+            <h2>🔐 RAG Document Chat</h2>
+            <p style="color:#888;">Enter password to continue</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        col1, col2, col3 = st.columns([1,2,1])
+        with col2:
+            password = st.text_input("Password", type="password")
+            if st.button("Enter", use_container_width=True):
+                if password == st.secrets["APP_PASSWORD"]:
+                    st.session_state.authenticated = True
+                    st.rerun()
+                else:
+                    st.error("Incorrect password")
+        st.stop()
+
+check_password()
+
 # --- Header with Gradient ---
 st.markdown("""
 <div class="main-header">
